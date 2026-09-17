@@ -1,0 +1,809 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Identity Number Generator — Historical Area Numbers</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; }
+
+  :root {
+    --bg:        #070b14;
+    --text:      #e9eefb;
+    --muted:     #8b98b0;
+    --border:    rgba(255,255,255,.09);
+    --accent:    #4f8cff;
+    --accent-2:  #7c5cff;
+    --ok:        #2fd18b;
+    --radius:    16px;
+  }
+
+  html, body { margin: 0; padding: 0; }
+
+  body {
+    min-height: 100vh;
+    padding: clamp(16px, 3vw, 44px);
+    color: var(--text);
+    font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    background:
+      radial-gradient(1100px 560px at 8% -12%, rgba(79,140,255,.20), transparent 62%),
+      radial-gradient(900px 520px at 100% 0%, rgba(124,92,255,.17), transparent 58%),
+      radial-gradient(800px 500px at 50% 120%, rgba(47,209,139,.08), transparent 60%),
+      var(--bg);
+    background-attachment: fixed;
+  }
+
+  [hidden] { display: none !important; }
+
+  .app { max-width: 1200px; margin: 0 auto; }
+
+  /* ---------- Hero ---------- */
+  .hero { margin-bottom: clamp(20px, 3vw, 32px); }
+
+  .hero-badge {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 6px 13px;
+    font-size: 11px; font-weight: 700;
+    letter-spacing: .14em; text-transform: uppercase;
+    color: #a8bde6;
+    background: rgba(79,140,255,.10);
+    border: 1px solid rgba(79,140,255,.26);
+    border-radius: 999px;
+  }
+  .hero-badge::before {
+    content: ""; width: 6px; height: 6px; border-radius: 50%;
+    background: var(--ok);
+    box-shadow: 0 0 10px var(--ok);
+  }
+
+  .hero h1 {
+    margin: 16px 0 10px;
+    font-size: clamp(26px, 4.6vw, 42px);
+    line-height: 1.1;
+    letter-spacing: -.025em;
+    font-weight: 800;
+    background: linear-gradient(120deg, #ffffff 10%, #b9ccf5 55%, #8fa9e0 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  .hero p {
+    margin: 0;
+    max-width: 62ch;
+    font-size: 15px;
+    line-height: 1.65;
+    color: var(--muted);
+  }
+
+  .stats {
+    display: flex; flex-wrap: wrap; gap: 10px;
+    margin-top: 18px;
+  }
+  .stat {
+    display: flex; align-items: baseline; gap: 7px;
+    padding: 8px 14px;
+    background: rgba(255,255,255,.035);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+  }
+  .stat b { font-size: 15px; font-weight: 700; letter-spacing: -.01em; }
+  .stat span { font-size: 11.5px; text-transform: uppercase; letter-spacing: .09em; color: var(--muted); }
+
+  /* ---------- Layout ---------- */
+  .layout {
+    display: grid;
+    gap: 20px;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr);
+    align-items: start;
+  }
+  @media (max-width: 940px) {
+    .layout { grid-template-columns: minmax(0, 1fr); }
+  }
+
+  .panel {
+    padding: clamp(16px, 2.4vw, 24px);
+    background: linear-gradient(180deg, rgba(255,255,255,.048), rgba(255,255,255,.018));
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    box-shadow: 0 24px 50px -30px rgba(0,0,0,.95);
+  }
+
+  .panel-head {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 12px; flex-wrap: wrap;
+    margin-bottom: 18px;
+  }
+  .panel-head h2 {
+    margin: 0;
+    font-size: 12px; font-weight: 700;
+    letter-spacing: .14em; text-transform: uppercase;
+    color: #9fb0cc;
+  }
+
+  .head-actions { display: flex; align-items: center; gap: 8px; }
+
+  .count {
+    min-width: 30px; text-align: center;
+    padding: 4px 10px;
+    font-size: 12px; font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    color: #bcd0f5;
+    background: rgba(79,140,255,.13);
+    border: 1px solid rgba(79,140,255,.26);
+    border-radius: 999px;
+  }
+
+  /* ---------- Fields ---------- */
+  .field { margin-bottom: 16px; }
+
+  .field label {
+    display: block;
+    margin-bottom: 7px;
+    font-size: 11px; font-weight: 700;
+    letter-spacing: .11em; text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  input[type="search"], select {
+    width: 100%;
+    padding: 11px 13px;
+    font: inherit;
+    font-size: 14px;
+    color: var(--text);
+    background: rgba(255,255,255,.045);
+    border: 1px solid var(--border);
+    border-radius: 11px;
+    outline: none;
+    transition: border-color .16s, box-shadow .16s, background .16s;
+  }
+  input[type="search"]::placeholder { color: #64708a; }
+
+  input[type="search"]:focus, select:focus {
+    border-color: rgba(79,140,255,.65);
+    background: rgba(79,140,255,.07);
+    box-shadow: 0 0 0 4px rgba(79,140,255,.13);
+  }
+
+  select {
+    appearance: none; -webkit-appearance: none;
+    padding-right: 38px;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%238b98b0' d='M6 8 0 0h12z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 13px center;
+    cursor: pointer;
+  }
+  select:disabled { opacity: .45; cursor: not-allowed; }
+  select option { background: #0d1424; color: var(--text); }
+
+  .grid-2 {
+    display: grid;
+    gap: 14px;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+  @media (max-width: 520px) {
+    .grid-2 { grid-template-columns: minmax(0, 1fr); }
+  }
+
+  /* ---------- State chips ---------- */
+  .chips {
+    display: flex; flex-wrap: wrap; gap: 8px;
+    max-height: 214px;
+    overflow-y: auto;
+    padding: 4px 6px 4px 2px;
+    margin-bottom: 18px;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255,255,255,.16) transparent;
+  }
+  .chips::-webkit-scrollbar { width: 8px; }
+  .chips::-webkit-scrollbar-thumb {
+    background: rgba(255,255,255,.14);
+    border-radius: 999px;
+  }
+  .chips::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,.24); }
+
+  .chip {
+    padding: 7px 13px;
+    font: inherit;
+    font-size: 12.5px;
+    font-weight: 500;
+    white-space: nowrap;
+    color: #c3cde0;
+    background: rgba(255,255,255,.035);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    cursor: pointer;
+    transition: background .15s, color .15s, border-color .15s, transform .12s, box-shadow .15s;
+  }
+  .chip:hover { background: rgba(255,255,255,.09); color: #fff; }
+  .chip:active { transform: translateY(1px); }
+  .chip.active {
+    color: #fff;
+    background: linear-gradient(135deg, var(--accent), var(--accent-2));
+    border-color: transparent;
+    box-shadow: 0 10px 24px -12px rgba(79,140,255,.95);
+  }
+
+  /* ---------- Buttons ---------- */
+  .btn {
+    font: inherit;
+    border: 1px solid transparent;
+    border-radius: 11px;
+    cursor: pointer;
+    transition: filter .16s, background .16s, border-color .16s, transform .12s, color .16s;
+  }
+  .btn:active { transform: translateY(1px); }
+
+  .btn.primary {
+    width: 100%;
+    padding: 14px 18px;
+    font-size: 14.5px; font-weight: 700; letter-spacing: .02em;
+    color: #fff;
+    background: linear-gradient(135deg, var(--accent), var(--accent-2));
+    box-shadow: 0 16px 34px -16px rgba(79,140,255,.95);
+  }
+  .btn.primary:hover { filter: brightness(1.09); }
+
+  .btn.ghost {
+    padding: 8px 13px;
+    font-size: 12.5px; font-weight: 600;
+    color: var(--text);
+    background: rgba(255,255,255,.045);
+    border-color: var(--border);
+  }
+  .btn.ghost:hover { background: rgba(255,255,255,.10); }
+
+  .hint {
+    margin: 12px 0 0;
+    font-size: 12px;
+    line-height: 1.6;
+    color: #6f7d97;
+  }
+  .hint code {
+    padding: 2px 6px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 11.5px;
+    color: #b9ccf5;
+    background: rgba(79,140,255,.12);
+    border: 1px solid rgba(79,140,255,.22);
+    border-radius: 6px;
+  }
+
+  /* ---------- Output list ---------- */
+  .list {
+    display: flex; flex-direction: column; gap: 8px;
+    max-height: 540px;
+    overflow-y: auto;
+    padding-right: 4px;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255,255,255,.16) transparent;
+  }
+  .list::-webkit-scrollbar { width: 8px; }
+  .list::-webkit-scrollbar-thumb { background: rgba(255,255,255,.14); border-radius: 999px; }
+
+  .row {
+    display: flex; align-items: center; gap: 10px;
+    padding: 11px 12px;
+    background: rgba(255,255,255,.032);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    animation: pop .26s cubic-bezier(.2,.9,.3,1.2);
+  }
+  @keyframes pop {
+    from { opacity: 0; transform: translateY(-7px) scale(.985); }
+    to   { opacity: 1; transform: none; }
+  }
+
+  .row .num {
+    flex: 0 0 auto;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 15px; font-weight: 600;
+    letter-spacing: .07em;
+    color: #eef3ff;
+  }
+
+  .row .tag {
+    margin-left: auto;
+    min-width: 0;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    padding: 4px 9px;
+    font-size: 10.5px; font-weight: 700;
+    letter-spacing: .09em; text-transform: uppercase;
+    color: #9fb8e8;
+    background: rgba(79,140,255,.11);
+    border: 1px solid rgba(79,140,255,.22);
+    border-radius: 999px;
+  }
+
+  .icon-btn {
+    flex: 0 0 auto;
+    display: grid; place-items: center;
+    width: 32px; height: 32px;
+    color: #a9b7d0;
+    background: rgba(255,255,255,.045);
+    border: 1px solid var(--border);
+    border-radius: 9px;
+    cursor: pointer;
+    transition: background .15s, color .15s, border-color .15s;
+  }
+  .icon-btn:hover { background: rgba(255,255,255,.11); color: #fff; }
+  .icon-btn.copied {
+    color: var(--ok);
+    background: rgba(47,209,139,.13);
+    border-color: rgba(47,209,139,.42);
+  }
+
+  .empty {
+    display: grid; place-items: center;
+    gap: 8px;
+    padding: 52px 20px;
+    text-align: center;
+    font-size: 13.5px;
+    line-height: 1.6;
+    color: #64708a;
+    border: 1px dashed rgba(255,255,255,.11);
+    border-radius: 14px;
+  }
+  .empty svg { opacity: .35; }
+
+  @media (max-width: 940px) {
+    .list { max-height: 60vh; }
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <header class="hero">
+    <div class="hero-badge">Historical Area Numbers</div>
+    <h1>Identity Number Generator</h1>
+    <p>
+      Generate randomized identity numbers using the historical area-number ranges
+      of all 50 U.S. states. Group numbers are produced in two forms —
+      <strong>01–99</strong> and <strong>11–98</strong> — and serial numbers stay
+      unique for the whole session.
+    </p>
+    <div class="stats">
+      <div class="stat"><b id="statStates">50</b><span>States</span></div>
+      <div class="stat"><b id="statAreas">0</b><span>Area Numbers</span></div>
+      <div class="stat"><b>0001–9999</b><span>Serial Range</span></div>
+    </div>
+  </header>
+
+  <div class="layout">
+
+    <!-- ============ CONFIG PANEL ============ -->
+    <section class="panel" aria-label="Configuration">
+      <div class="panel-head">
+        <h2>Configuration</h2>
+      </div>
+
+      <div class="field">
+        <label for="stateSearch">Search state</label>
+        <input id="stateSearch" type="search" placeholder="e.g. California, Texas, New York…" autocomplete="off" spellcheck="false">
+      </div>
+
+      <div class="chips" id="stateChips" role="listbox" aria-label="Select a state"></div>
+
+      <div class="grid-2">
+        <div class="field">
+          <label for="areaSelect" id="areaLabel">Area number</label>
+          <select id="areaSelect"></select>
+        </div>
+        <div class="field">
+          <label for="groupSelect">Group format</label>
+          <select id="groupSelect">
+            <option value="auto">Mixed — 01–99 / 11–98</option>
+            <option value="01-99">Standard — 01–99</option>
+            <option value="11-98">Restricted — 11–98</option>
+          </select>
+        </div>
+      </div>
+
+      <button id="generateBtn" class="btn primary" type="button">Generate Number</button>
+
+      <p class="hint">
+        Format: <code>AAA-GG-SSSS</code> · Area = state code, Group = randomized,
+        Serial = unique within this session.
+      </p>
+    </section>
+
+    <!-- ============ OUTPUT PANEL ============ -->
+    <section class="panel" aria-label="Generated numbers">
+      <div class="panel-head">
+        <h2>Generated</h2>
+        <div class="head-actions">
+          <span class="count" id="count">0</span>
+          <button id="copyAllBtn" class="btn ghost" type="button">Copy all</button>
+          <button id="clearBtn" class="btn ghost" type="button">Clear</button>
+        </div>
+      </div>
+
+      <div class="list" id="list">
+        <div class="empty" id="empty">
+          <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="4" width="18" height="16" rx="3"/>
+            <path d="M7 9h10M7 13h6"/>
+          </svg>
+          <span>No numbers yet — pick a state and hit <strong>Generate Number</strong>.</span>
+        </div>
+      </div>
+    </section>
+
+  </div>
+</div>
+
+<script>
+/* =========================================================
+   HISTORICAL AREA NUMBERS BY STATE
+   ========================================================= */
+const AREA_DATA = {
+  "Alabama":        "416-424",
+  "Alaska":         "574",
+  "Arizona":        "526-527, 600-601, 764-765",
+  "Arkansas":       "429-432, 676-679",
+  "California":     "545-573, 602-626",
+  "Colorado":       "521-524, 650-653",
+  "Connecticut":    "040-049",
+  "Delaware":       "221-222",
+  "Florida":        "261-267, 589-595, 766-772",
+  "Georgia":        "252-260, 667-675",
+  "Hawaii":         "575-576, 750-751",
+  "Idaho":          "518-519",
+  "Illinois":       "318-361",
+  "Indiana":        "303-317",
+  "Iowa":           "478-485",
+  "Kansas":         "509-515",
+  "Kentucky":       "400-407",
+  "Louisiana":      "433-439, 659-665",
+  "Maine":          "004-007",
+  "Maryland":       "212-220",
+  "Massachusetts":  "010-034",
+  "Michigan":       "362-386",
+  "Minnesota":      "468-477",
+  "Mississippi":    "425-428, 587-588, 752-755",
+  "Missouri":       "486-500",
+  "Montana":        "516-517",
+  "Nebraska":       "505-508",
+  "Nevada":         "530, 680",
+  "New Hampshire":  "001-003",
+  "New Jersey":     "135-158",
+  "New Mexico":     "585, 648-649",
+  "New York":       "050-134",
+  "North Carolina": "232, 237-246, 681-690",
+  "North Dakota":   "501-502",
+  "Ohio":           "268-302",
+  "Oklahoma":       "440-448",
+  "Oregon":         "540-544",
+  "Pennsylvania":   "159-211",
+  "Rhode Island":   "035-039",
+  "South Carolina": "247-251, 654-658",
+  "South Dakota":   "503-504",
+  "Tennessee":      "408-415, 756-763",
+  "Texas":          "449-467, 627-645",
+  "Utah":           "528-529, 646-647",
+  "Vermont":        "008-009",
+  "Virginia":       "223-231, 691-699",
+  "Washington":     "531-539",
+  "West Virginia":  "232-236",
+  "Wisconsin":      "387-399",
+  "Wyoming":        "520"
+};
+
+/* ---------- Helpers ---------- */
+const pad3 = n => String(n).padStart(3, "0");
+const pad4 = n => String(n).padStart(4, "0");
+const pad2 = n => String(n).padStart(2, "0");
+const randInt = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
+const pick = arr => arr[randInt(0, arr.length - 1)];
+
+/** Expand "416-424, 600-601" into ["416","417",...,"601"] */
+function parseAreas(spec) {
+  const out = [];
+  for (const raw of spec.split(",")) {
+    const part = raw.trim();
+    if (!part) continue;
+    if (part.includes("-")) {
+      const [a, b] = part.split("-").map(v => parseInt(v.trim(), 10));
+      for (let i = a; i <= b; i++) out.push(pad3(i));
+    } else {
+      out.push(pad3(parseInt(part, 10)));
+    }
+  }
+  return out;
+}
+
+const STATES = Object.keys(AREA_DATA).map(name => ({
+  name,
+  areas: parseAreas(AREA_DATA[name])
+}));
+const STATE_MAP = Object.fromEntries(STATES.map(s => [s.name, s]));
+const TOTAL_AREAS = STATES.reduce((sum, s) => sum + s.areas.length, 0);
+
+/* =========================================================
+   DOM
+   ========================================================= */
+const stateChips  = document.getElementById("stateChips");
+const stateSearch = document.getElementById("stateSearch");
+const areaSelect  = document.getElementById("areaSelect");
+const areaLabel   = document.getElementById("areaLabel");
+const groupSelect = document.getElementById("groupSelect");
+const generateBtn = document.getElementById("generateBtn");
+const listEl      = document.getElementById("list");
+const emptyEl     = document.getElementById("empty");
+const countEl     = document.getElementById("count");
+const copyAllBtn  = document.getElementById("copyAllBtn");
+const clearBtn    = document.getElementById("clearBtn");
+
+document.getElementById("statStates").textContent = STATES.length;
+document.getElementById("statAreas").textContent  = TOTAL_AREAS.toLocaleString();
+
+/* =========================================================
+   STATE
+   ========================================================= */
+let selectedState = "ANY";
+let groupMode     = "auto";
+const usedIds     = new Set();
+const allIds      = [];
+let total         = 0;
+
+/* =========================================================
+   ICONS
+   ========================================================= */
+const COPY_ICON = `<svg viewBox="0 0 24 24" width="15" height="15" fill="none"
+  stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <rect x="9" y="9" width="13" height="13" rx="2.5"/>
+  <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>`;
+
+const CHECK_ICON = `<svg viewBox="0 0 24 24" width="15" height="15" fill="none"
+  stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">
+  <path d="M20 6 9 17l-5-5"/></svg>`;
+
+/* =========================================================
+   CLIPBOARD
+   ========================================================= */
+function legacyCopy(text) {
+  const ta = document.createElement("textarea");
+  ta.value = text;
+  ta.setAttribute("readonly", "");
+  ta.style.cssText = "position:fixed;top:0;left:0;opacity:0;pointer-events:none";
+  document.body.appendChild(ta);
+  ta.select();
+  let ok = false;
+  try { ok = document.execCommand("copy"); } catch (_) { ok = false; }
+  document.body.removeChild(ta);
+  return ok;
+}
+
+function copyText(text) {
+  if (navigator.clipboard && window.isSecureContext) {
+    return navigator.clipboard.writeText(text)
+      .then(() => true)
+      .catch(() => legacyCopy(text));
+  }
+  return Promise.resolve(legacyCopy(text));
+}
+
+/* =========================================================
+   STATE CHIPS
+   ========================================================= */
+function makeChip(value, label) {
+  const btn = document.createElement("button");
+  btn.type = "button";
+  btn.className = "chip" + (value === selectedState ? " active" : "");
+  btn.textContent = label;
+  btn.dataset.state = value;
+  btn.setAttribute("role", "option");
+  btn.setAttribute("aria-selected", value === selectedState ? "true" : "false");
+  btn.addEventListener("click", () => selectState(value));
+  return btn;
+}
+
+function buildChips(filter = "") {
+  const f = filter.trim().toLowerCase();
+  stateChips.innerHTML = "";
+
+  if (!f || "any state".includes(f)) {
+    stateChips.appendChild(makeChip("ANY", "Any state"));
+  }
+
+  const matches = STATES.filter(s => s.name.toLowerCase().includes(f));
+  for (const s of matches) {
+    stateChips.appendChild(makeChip(s.name, s.name));
+  }
+
+  if (!stateChips.children.length) {
+    const msg = document.createElement("p");
+    msg.className = "hint";
+    msg.style.margin = "8px 2px";
+    msg.textContent = "No states match your search.";
+    stateChips.appendChild(msg);
+  }
+}
+
+function refreshChipStates() {
+  stateChips.querySelectorAll(".chip").forEach(c => {
+    const active = c.dataset.state === selectedState;
+    c.classList.toggle("active", active);
+    c.setAttribute("aria-selected", active ? "true" : "false");
+  });
+}
+
+/* =========================================================
+   AREA SELECT
+   ========================================================= */
+function populateAreas() {
+  areaSelect.innerHTML = "";
+
+  if (selectedState === "ANY") {
+    areaSelect.appendChild(new Option("Random area (all states)", ""));
+    areaSelect.disabled = true;
+    areaLabel.textContent = "Area number";
+    return;
+  }
+
+  const state = STATE_MAP[selectedState];
+  areaSelect.disabled = false;
+  areaSelect.appendChild(new Option("Random area", ""));
+  for (const area of state.areas) {
+    areaSelect.appendChild(new Option(area, area));
+  }
+  areaLabel.textContent = `Area number · ${state.areas.length} available`;
+}
+
+function selectState(value) {
+  selectedState = value;
+  refreshChipStates();
+  populateAreas();
+}
+
+/* =========================================================
+   GENERATION
+   ========================================================= */
+function makeGroup(mode) {
+  if (mode === "01-99") return pad2(randInt(1, 99));
+  if (mode === "11-98") return pad2(randInt(11, 98));
+  // Mixed: randomly choose one of the two forms
+  return Math.random() < 0.5 ? pad2(randInt(1, 99)) : pad2(randInt(11, 98));
+}
+
+function pickTarget() {
+  if (selectedState === "ANY") {
+    const state = pick(STATES);
+    return { state: state.name, area: pick(state.areas) };
+  }
+  const state = STATE_MAP[selectedState];
+  const area = areaSelect.value || pick(state.areas);
+  return { state: state.name, area };
+}
+
+function generateId() {
+  const { state, area } = pickTarget();
+  const group = makeGroup(groupMode);
+
+  let id = "";
+  let guard = 0;
+
+  do {
+    const serial = randInt(1, 9999);
+    id = `${area}-${group}-${pad4(serial)}`;
+    guard++;
+  } while (usedIds.has(id) && guard < 50000);
+
+  if (usedIds.has(id)) {
+    // Extremely unlikely — fall back to a scan for a free serial
+    for (let s = 1; s <= 9999; s++) {
+      const candidate = `${area}-${group}-${pad4(s)}`;
+      if (!usedIds.has(candidate)) { id = candidate; break; }
+    }
+  }
+
+  usedIds.add(id);
+  return { id, state };
+}
+
+/* =========================================================
+   RENDER
+   ========================================================= */
+function addRow(item) {
+  const row = document.createElement("div");
+  row.className = "row";
+
+  const num = document.createElement("span");
+  num.className = "num";
+  num.textContent = item.id;
+
+  const tag = document.createElement("span");
+  tag.className = "tag";
+  tag.textContent = item.state;
+  tag.title = item.state;
+
+  const btn = document.createElement("button");
+  btn.type = "button";
+  btn.className = "icon-btn";
+  btn.title = "Copy number";
+  btn.setAttribute("aria-label", `Copy ${item.id}`);
+  btn.innerHTML = COPY_ICON;
+
+  btn.addEventListener("click", async () => {
+    const ok = await copyText(item.id);
+    if (!ok) return;
+    btn.classList.add("copied");
+    btn.innerHTML = CHECK_ICON;
+    clearTimeout(btn._t);
+    btn._t = setTimeout(() => {
+      btn.classList.remove("copied");
+      btn.innerHTML = COPY_ICON;
+    }, 1100);
+  });
+
+  row.append(num, tag, btn);
+  listEl.prepend(row);
+}
+
+function updateCount() {
+  countEl.textContent = total;
+  emptyEl.hidden = total > 0;
+}
+
+/* =========================================================
+   EVENTS
+   ========================================================= */
+generateBtn.addEventListener("click", () => {
+  const item = generateId();
+  allIds.push(item.id);
+  total++;
+  addRow(item);
+  updateCount();
+
+  // Small press feedback
+  generateBtn.style.transform = "scale(.985)";
+  setTimeout(() => { generateBtn.style.transform = ""; }, 110);
+});
+
+stateSearch.addEventListener("input", e => buildChips(e.target.value));
+
+groupSelect.addEventListener("change", e => { groupMode = e.target.value; });
+
+copyAllBtn.addEventListener("click", async () => {
+  if (!allIds.length) return;
+  const ok = await copyText(allIds.join("\n"));
+  if (!ok) return;
+  const original = copyAllBtn.textContent;
+  copyAllBtn.textContent = "Copied!";
+  copyAllBtn.disabled = true;
+  setTimeout(() => {
+    copyAllBtn.textContent = original;
+    copyAllBtn.disabled = false;
+  }, 1200);
+});
+
+clearBtn.addEventListener("click", () => {
+  usedIds.clear();
+  allIds.length = 0;
+  total = 0;
+  listEl.querySelectorAll(".row").forEach(r => r.remove());
+  updateCount();
+});
+
+/* Keyboard shortcut: Enter in search field generates */
+stateSearch.addEventListener("keydown", e => {
+  if (e.key === "Enter") {
+    e.preventDefault();
+    generateBtn.click();
+  }
+});
+
+/* =========================================================
+   INIT
+   ========================================================= */
+buildChips();
+selectState("ANY");
+updateCount();
+</script>
+</body>
+</html>
